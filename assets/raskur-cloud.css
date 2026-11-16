@@ -1,0 +1,173 @@
+.ids {
+  --rc-orange: 255, 105, 0;
+  --rc-ink: 20, 30, 50;
+  --rc-line: rgba(var(--rc-ink), 0.12);
+  --rc-tint: rgba(var(--rc-orange), 0.06);
+  --rc-radius: 8px;
+  --rc-shadow: 0 1px 2px rgba(var(--rc-ink), 0.06), 0 4px 16px rgba(var(--rc-ink), 0.06);
+  --rc-ease: 0.18s ease;
+  --ids__accent-RGB: var(--rc-orange);
+  --ids__hover-RGB: 224, 84, 0;
+  --ids__text-RGB: var(--rc-ink);
+}
+
+.ids {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.ids :focus-visible {
+  outline: 3px solid rgb(var(--rc-orange));
+  outline-offset: 2px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.ids ::selection {
+  background: rgba(var(--rc-orange), 0.25);
+}
+
+.legacy-header-container .header {
+  border-bottom: 1px solid var(--rc-line);
+  box-shadow: 0 1px 12px rgba(var(--rc-ink), 0.08);
+}
+
+.header-container .language-switcher .links {
+  border-radius: 999px;
+}
+
+.main-cover .cover-menu .menu-section a {
+  padding: 0.5em 0.4em;
+  min-height: 2.75em;
+  box-sizing: border-box;
+  border-radius: 2px;
+  transition: background-color var(--rc-ease), color var(--rc-ease);
+}
+
+.main-cover .cover-menu .menu-section a:hover,
+.main-cover .cover-menu .menu-section a:focus-visible {
+  color: #fff;
+  background-color: rgb(var(--rc-orange));
+  transition: background-color var(--rc-ease), color var(--rc-ease);
+}
+
+.divider .divider-links a,
+.meme-card {
+  border: 1px solid var(--rc-line);
+  border-radius: var(--rc-radius);
+  background-color: var(--rc-tint);
+  transition: box-shadow var(--rc-ease), border-color var(--rc-ease), transform var(--rc-ease);
+}
+
+.divider .divider-links a {
+  padding: 0.7em 1em 1em;
+  box-sizing: border-box;
+}
+
+.divider .divider-links a:hover,
+.divider .divider-links a:focus-visible,
+.meme-card:hover,
+.meme-card:focus-within {
+  border-color: rgba(var(--rc-orange), 0.55);
+  box-shadow: var(--rc-shadow);
+  transform: translateY(-1px);
+}
+
+.meme-card {
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.meme-card .meme-card-image img {
+  border-radius: calc(var(--rc-radius) - 2px);
+}
+
+.arrow-button,
+.nav-popup {
+  border-radius: var(--rc-radius);
+}
+
+.nav-popup {
+  border: 1px solid var(--rc-line);
+  box-shadow: var(--rc-shadow);
+}
+
+.nav-popup a {
+  min-height: 2.5em;
+  box-sizing: border-box;
+}
+
+.review-carousel .slide .wrapper {
+  border: 1px solid var(--rc-line);
+  border-radius: var(--rc-radius);
+  overflow: hidden;
+  background: #fff;
+}
+
+.review-carousel .image-container img {
+  max-width: 100%;
+  height: auto;
+}
+
+.review-carousel .caption {
+  padding: 0.75em 1em;
+  border-top: 1px solid var(--rc-line);
+}
+
+.review-carousel .slides-container {
+  scroll-snap-type: x proximity;
+}
+
+.review-carousel .slide {
+  scroll-snap-align: start;
+}
+
+.ids img,
+.ids video {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .main-cover .cover-menu .menu-section a {
+    min-height: 3em;
+    display: flex;
+    align-items: center;
+  }
+
+  .divider .divider-links a {
+    min-height: 3em;
+  }
+
+  .legacy-header-container .header {
+    box-shadow: 0 1px 8px rgba(var(--rc-ink), 0.1);
+  }
+}
+
+@media (hover: none) {
+  .divider .divider-links a:hover,
+  .meme-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ids *,
+  .ids *::before,
+  .ids *::after {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .divider .divider-links a:hover,
+  .meme-card:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .ids :focus-visible {
+    outline-color: Highlight;
+    box-shadow: none;
+  }
+}
