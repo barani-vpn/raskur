@@ -71,6 +71,8 @@ class SitesTest(unittest.TestCase):
                     self.assertRegex(urlsplit(href).path, r'^/_astro/[\w.-]+\.css$')
                 for tag, a in elements:
                     href = a.get('href', '')
+                    if tag == 'a':
+                        self.assertNotEqual(urlsplit(href).hostname, 'github.com')
                     if href.startswith('#'):
                         self.assertIn(href[1:], ids)
                     source = a.get('src') or (href if tag == 'link' and a.get('rel') in ('stylesheet', 'icon', 'preload') else None)

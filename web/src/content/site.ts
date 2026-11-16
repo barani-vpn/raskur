@@ -30,8 +30,6 @@ const label = {
   en: { cloud: 'Cloud platform', education: 'Education', brandbook: 'Brandbook', home: 'Home', products: 'Products', usecases: 'Use cases', availability: 'Platform' },
 } as const;
 
-const github = 'https://github.com/barani-vpn/raskur';
-
 export const headerNav = (site: Site, lang: Lang): Link[] => {
   const l = label[lang];
   return site === 'cloud'
@@ -62,7 +60,6 @@ export const footer = (site: Site, lang: Lang): { links: Link[]; note: string } 
           { label: l.cloud, href: absolute('cloud', '/', lang) },
           { label: l.education, href: publicPath('/grants/', lang) },
           { label: l.brandbook, href: absolute('brand', '/', lang) },
-          { label: 'GitHub', href: github },
         ];
   return { links, note };
 };
