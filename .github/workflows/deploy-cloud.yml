@@ -47,8 +47,19 @@ jobs:
             -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$GITHUB_WORKSPACE/.github/raskur-known-hosts" \
             raskurdeploy@193.34.213.72 < "$RUNNER_TEMP/raskur-sites.tar.gz"
-      - name: Verify cloud deployment
+      - name: Verify deployed sites
         run: |
-          curl --fail --silent --show-error --retry 3 --max-time 30 \
-            "https://cloud.raskur.tech/?deployment=$GITHUB_SHA" -o "$RUNNER_TEMP/live.html"
-          cmp "$RUNNER_TEMP/live.html" "$RUNNER_TEMP/raskur-sites/index.html"
+          set -euo pipefail
+          for host in cloud.raskur.tech raskur.tech; do
+            paths=(/ /en/)
+            prefix=''
+            if [[ "$host" == 'raskur.tech' ]]; then
+              paths+=(/grants/ /en/grants/)
+              prefix='frontdoor/'
+            fi
+            for path in "${paths[@]}"; do
+              curl --fail --silent --show-error --retry 3 --max-time 30 \
+                "https://$host$path?deployment=$GITHUB_SHA" -o "$RUNNER_TEMP/live.html"
+              cmp "$RUNNER_TEMP/live.html" "$RUNNER_TEMP/raskur-sites/$prefix${path#/}index.html"
+            done
+          done

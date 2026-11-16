@@ -1,0 +1,5 @@
+exclude:
+  - web
+  - scripts
+  - tests
+  - deploy
