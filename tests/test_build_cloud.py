@@ -74,18 +74,26 @@ class SitesTest(unittest.TestCase):
                     if source and source.startswith('/'):
                         self.assertTrue((self.out / urlsplit(source).path.lstrip('/')).is_file(), source)
 
-    def test_cloud_products_and_grant_status(self):
+    def test_catalogue_and_scholars_programme(self):
         for filename, (lang, _, _) in PAGES.items():
             page = Page((self.out / filename).read_text())
             text = ' '.join(page.text)
+            copy = (text + ' ' + ' '.join(a.get('content', '') for tag, a in page.elements if tag == 'meta')).lower()
+            for stale in ('в разработке', 'планируется', 'не объявлены', 'программа готовится', 'вымышлен', 'демонстрацион', 'in development', 'to be announced', 'not open yet', 'in preparation', 'fictional', 'demonstration', 'coming soon', 'planned services'):
+                self.assertFalse(stale in copy, f'{filename}: obsolete copy {stale!r}')
+            for tag, attrs in page.elements:
+                if tag == 'a':
+                    self.assertNotRegex(attrs.get('href', ''), r'(?i)(?:^|[/#?=])(signup|sign-up|register|apply|checkout|payment)(?:[/?#=&]|$)')
             if filename in ('index.html', 'en/index.html'):
                 for name in ('EC2', 'S3', 'EFS', 'Kubernetes', 'PostgreSQL', 'ClickHouse'):
                     self.assertIn(name, text)
                 products = [a for tag, a in page.elements if tag == 'article' and 'product' in a.get('class', '').split()]
                 self.assertEqual(len(products), 6)
             if '/grants/' in filename:
-                self.assertIn('приём заявок не открыт' if lang == 'ru' else 'applications are not open', text.lower())
-                self.assertNotRegex(text, r'[€£₽]|\$\s?\d|\d\s?(?:USD|EUR|RUB)')
+                for term in ('Raskur Scholars', 'Admission Track', 'Study Grant', '€20 000'):
+                    self.assertIn(term, text)
+                self.assertIn('ведущие университеты Европы' if lang == 'ru' else 'leading European universities', text)
+                self.assertIn('не гарантирует поступление' if lang == 'ru' else 'does not guarantee admission', text)
                 self.assertNotIn('simulator', text.lower())
 
     def test_bundle_and_actual_receiver(self):

@@ -26,8 +26,8 @@ export const ui = {
 } as const;
 
 const label = {
-  ru: { cloud: 'Облачная платформа', education: 'Образование', brandbook: 'Брендбук', home: 'Главная', products: 'Продукты', usecases: 'Сценарии', availability: 'Доступность' },
-  en: { cloud: 'Cloud platform', education: 'Education', brandbook: 'Brandbook', home: 'Home', products: 'Products', usecases: 'Use cases', availability: 'Availability' },
+  ru: { cloud: 'Облачная платформа', education: 'Образование', brandbook: 'Брендбук', home: 'Главная', products: 'Продукты', usecases: 'Сценарии', availability: 'Платформа' },
+  en: { cloud: 'Cloud platform', education: 'Education', brandbook: 'Brandbook', home: 'Home', products: 'Products', usecases: 'Use cases', availability: 'Platform' },
 } as const;
 
 const github = 'https://github.com/barani-vpn/raskur';
@@ -52,12 +52,12 @@ export const footer = (site: Site, lang: Lang): { links: Link[]; note: string } 
   const l = label[lang];
   const note = {
     cloud: {
-      ru: 'Додо Раскур · Платформа в разработке. Названия сторонних продуктов принадлежат их правообладателям.',
-      en: 'Dodo Raskur · Platform in development. Third-party product names belong to their respective owners.',
+      ru: 'Додо Раскур Cloud. Названия сторонних продуктов принадлежат их правообладателям.',
+      en: 'Dodo Raskur Cloud. Third-party product names belong to their respective owners.',
     },
     apex: {
-      ru: 'Независимый проект. Не связан с «Додо Пиццей». Информация о планируемых сервисах не является офертой.',
-      en: 'An independent project, not affiliated with Dodo Pizza. Information about planned services is not an offer of service.',
+      ru: 'Додо Раскур. Независимый проект, не связанный с «Додо Пиццей».',
+      en: 'Dodo Raskur. An independent project, not affiliated with Dodo Pizza.',
     },
   }[site][lang];
   const links =
