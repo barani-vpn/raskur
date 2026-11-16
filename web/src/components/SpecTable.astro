@@ -1,0 +1,5 @@
+---
+interface Props { rows: { term: string; text: string }[]; strip?: boolean }
+const { rows, strip = false } = Astro.props;
+---
+<dl class:list={['spec', { strip }]}>{rows.map((r) => <div><dt>{r.term}</dt><dd>{r.text}</dd></div>)}</dl>

@@ -1,0 +1,23 @@
+---
+interface Props { id?: string; icon: string; tag?: string; title: string; text: string; summary?: string; detail?: string }
+const { id, icon, tag, title, text, summary, detail } = Astro.props;
+---
+<article class="product" id={id}>
+  <div class="product-top"><span class="product-icon" aria-hidden="true">{icon}</span>{tag && <span class="tag">{tag}</span>}</div>
+  <h3>{title}</h3>
+  <p>{text}</p>
+  {detail && <details><summary>{summary}</summary><p>{detail}</p></details>}
+</article>
+
+<style>
+  .product{padding:26px;border:1px solid var(--line);border-radius:8px;scroll-margin-top:120px;background:#fff}
+  .product-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:24px}
+  .product-icon{display:grid;place-items:center;min-width:44px;height:44px;padding:0 6px;border:1px solid #d5c4d8;border-radius:6px;background:#f5edf6;color:var(--plum);font:500 13px ui-monospace,monospace}
+  .tag{color:var(--muted);font-size:11px}
+  h3{min-height:2.3em;margin-bottom:14px}
+  article>p{min-height:5em;font-size:15px;color:var(--muted)}
+  details{margin-top:24px;border-top:1px solid var(--line);padding-top:16px}
+  @media(max-width:1100px){article>p{min-height:3.5em}}
+  @media(max-width:540px){.product{padding:24px;scroll-margin-top:150px}h3,article>p{min-height:0}}
+  @media(forced-colors:active){.product-icon{border:1px solid CanvasText}}
+</style>

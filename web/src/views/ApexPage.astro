@@ -1,0 +1,20 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import Hero from '../components/Hero.astro';
+import Section from '../components/Section.astro';
+import Directory from '../components/apex/Directory.astro';
+import ServiceIndex from '../components/apex/ServiceIndex.astro';
+import EducationBand from '../components/apex/EducationBand.astro';
+import { apex } from '../content/apex';
+import type { Lang } from '../content/site';
+
+const { lang } = Astro.props as { lang: Lang };
+const c = apex[lang];
+---
+<SiteLayout site="apex" lang={lang} path="/" title={c.meta.title} description={c.meta.description} ogDescription={c.meta.ogDescription} announcement={c.announcement}>
+  <Hero {...c.hero} tone="light"><Directory {...c.directory} /></Hero>
+  <Section id="projects" eyebrow={c.platform.eyebrow} title={c.platform.title} text={c.platform.text}>
+    <ServiceIndex items={c.platform.services} />
+  </Section>
+  <EducationBand {...c.education} />
+</SiteLayout>

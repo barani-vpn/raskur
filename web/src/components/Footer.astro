@@ -1,0 +1,15 @@
+---
+import { footer, link, ui, type Lang, type Site } from '../content/site';
+
+interface Props { site: Site; lang: Lang }
+const { site, lang } = Astro.props;
+const t = ui[lang];
+const { links, note } = footer(site, lang);
+---
+<footer>
+  <div class="wrap footer-main">
+    <a class="brand" href={link(site, 'apex', '/', lang)}><img src="/images/D.svg" width="30" height="32" alt=""><span>{t.brand}</span></a>
+    <nav aria-label={t.more}>{links.map((l) => <a href={l.href}>{l.label}</a>)}</nav>
+  </div>
+  <div class="wrap footer-note">{note}</div>
+</footer>

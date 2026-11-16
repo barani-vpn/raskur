@@ -1,0 +1,6 @@
+---
+import type { Link } from '../content/site';
+interface Props { text: string; link?: Link }
+const { text, link } = Astro.props;
+---
+<div class="announcement"><div class="wrap"><span>{text}</span>{link && <a href={link.href}>{link.label} <span aria-hidden="true">↗</span></a>}</div></div>

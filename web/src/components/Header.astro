@@ -1,0 +1,22 @@
+---
+import { headerNav, langs, link, ui, type Lang, type Site } from '../content/site';
+
+interface Props { site: Site; lang: Lang; currentHref: string; switchHref: string }
+const { site, lang, currentHref, switchHref } = Astro.props;
+const t = ui[lang];
+---
+<header class="site-header"><div class="wrap nav-row">
+  <a class="brand" href={link(site, 'apex', '/', lang)} aria-label={t.home}>
+    <img src="/images/D.svg" width="32" height="34" alt=""><span>{t.brand}{site === 'cloud' && <small>cloud</small>}</span>
+  </a>
+  <nav class="primary-nav" aria-label={t.main}>
+    {headerNav(site, lang).map((i) => <a href={i.href} aria-current={i.href === currentHref ? 'page' : undefined}>{i.label}</a>)}
+  </nav>
+  <nav class="lang" aria-label={t.language}>
+    {langs.map((l) =>
+      l === lang
+        ? <span aria-current="page">{l.toUpperCase()}</span>
+        : <a href={switchHref} hreflang={l} lang={l}>{l.toUpperCase()}</a>
+    )}
+  </nav>
+</div></header>

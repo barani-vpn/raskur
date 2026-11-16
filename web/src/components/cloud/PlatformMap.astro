@@ -1,0 +1,36 @@
+---
+interface Props { caption: string; label: string; note: string; layers: { title: string; text: string; symbol: string }[] }
+const { caption, label, note, layers } = Astro.props;
+---
+<figure class="platform-map">
+  <figcaption><span>{caption}</span><span class="map-label">{label}</span></figcaption>
+  {layers.map((l, i) => (
+    <>
+      {i > 0 && <div class="map-connector" aria-hidden="true"></div>}
+      <div class:list={['map-layer', { accent: i === layers.length - 1 }]}>
+        <span class="layer-number">0{i + 1}</span>
+        <div><strong>{l.title}</strong><p>{l.text}</p></div>
+        <span class="layer-symbol" aria-hidden="true">{l.symbol}</span>
+      </div>
+    </>
+  ))}
+  <p class="map-note">{note}</p>
+</figure>
+
+<style>
+  .platform-map{width:100%;padding:26px;border:1px solid #594260;border-radius:10px;background:#281732;color:#fff}
+  figcaption{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px;font-size:13px}
+  .map-label{font:10px/1.5 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase;color:#c9b8d3;border:1px solid #6d5277;padding:4px 7px}
+  .map-layer{display:flex;align-items:center;gap:16px;padding:22px 16px;border:1px solid #70547a;background:#35213e;border-radius:6px}
+  .layer-number{font:11px/1 ui-monospace,monospace;color:#c9b8d3;align-self:flex-start;padding-top:7px}
+  strong{font-size:17px;font-weight:500}
+  .map-layer p{font-size:11px;color:#cfbfd7;line-height:1.6;margin-top:7px}
+  .layer-symbol{margin-left:auto;font:24px/1 system-ui,sans-serif;color:#e3c4ec}
+  .map-connector{height:21px;border-left:1px solid #96729d;margin-left:34px}
+  .accent{border-color:var(--orange);background:#462d35}
+  .accent .layer-number,.accent .layer-symbol{color:#ffc29e}
+  .map-note{font-size:11px;color:#bfaec9;margin-top:22px;line-height:1.5}
+  @media(max-width:800px){.platform-map{max-width:560px}}
+  @media(max-width:540px){.platform-map{padding:20px}.map-layer{padding:18px 12px;gap:12px}.layer-symbol{display:none}}
+  @media(forced-colors:active){.map-layer{border:1px solid CanvasText}}
+</style>

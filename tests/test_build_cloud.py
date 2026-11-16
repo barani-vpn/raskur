@@ -1,80 +1,121 @@
+from html.parser import HTMLParser
+import os
+from pathlib import Path
 import re
-import shutil
-from unittest import mock
+import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
-from pathlib import Path
+from urllib.parse import urlsplit
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
-import build_cloud as b
+from scripts.build_cloud import build, package
+from scripts.receive_cloud import FILES, CSS
 
-BRAND, CLOUD = b.BRAND, b.CLOUD
-H1 = re.compile(r"<h1[^>]*>.*?</h1>", re.S)
+ROOT = Path(__file__).resolve().parents[1]
+PAGES = {
+    'index.html': ('ru', 'https://cloud.raskur.tech/', '/en/'),
+    'en/index.html': ('en', 'https://cloud.raskur.tech/en/', '/'),
+    'frontdoor/index.html': ('ru', 'https://raskur.tech/', '/en/'),
+    'frontdoor/en/index.html': ('en', 'https://raskur.tech/en/', '/'),
+    'frontdoor/grants/index.html': ('ru', 'https://raskur.tech/grants/', '/en/grants/'),
+    'frontdoor/en/grants/index.html': ('en', 'https://raskur.tech/en/grants/', '/grants/'),
+}
 
 
-class BuildCloud(unittest.TestCase):
+class Page(HTMLParser):
+    def __init__(self, text):
+        super().__init__()
+        self.elements, self.text = [], []
+        self.feed(text)
+
+    def handle_starttag(self, tag, attrs):
+        self.elements.append((tag, dict(attrs)))
+
+    def handle_data(self, data):
+        self.text.append(data)
+
+
+class SitesTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
-        cls.out = Path(cls.tmp.name)
-        b.build(cls.out)
+        cls.out = Path(os.environ.get('RASKUR_BUILD_DIR', Path(cls.tmp.name) / 'site'))
+        if 'RASKUR_BUILD_DIR' not in os.environ:
+            build(cls.out)
 
     @classmethod
     def tearDownClass(cls):
         cls.tmp.cleanup()
 
-    def test_assets_copied_and_previews_not(self):
-        for a in b.ASSETS:
-            if a.endswith('.css'):
-                self.assertRegex((self.out / a).read_text(), r'/fonts/Pragmatica\.ttf\?v=[0-9a-f]{12}')
-            else:
-                self.assertEqual((self.out / a).read_bytes(), (b.ROOT / a).read_bytes(), a)
-        self.assertFalse((self.out / "cloud.html").exists())
-        self.assertFalse((self.out / "en/cloud.html").exists())
+    def test_routes_metadata_assets_and_links(self):
+        pages = {p.relative_to(self.out).as_posix() for p in self.out.rglob('*.html')}
+        self.assertEqual(pages, set(PAGES))
+        for filename, (lang, canonical, other) in PAGES.items():
+            with self.subTest(page=filename):
+                page = Page((self.out / filename).read_text())
+                elements = page.elements
+                self.assertTrue(any(tag == 'html' and attrs.get('lang') == lang for tag, attrs in elements))
+                self.assertEqual(sum(tag == 'h1' for tag, _ in elements), 1)
+                self.assertTrue(any(tag == 'link' and a.get('rel') == 'canonical' and a.get('href') == canonical for tag, a in elements))
+                self.assertTrue(any(tag == 'a' and a.get('hreflang') and urlsplit(a.get('href', '')).path == other for tag, a in elements))
+                self.assertFalse({'script', 'iframe', 'form', 'input'} & {tag for tag, _ in elements})
+                ids = [a['id'] for _, a in elements if 'id' in a]
+                self.assertEqual(len(ids), len(set(ids)))
+                styles = [a['href'] for tag, a in elements if tag == 'link' and a.get('rel') == 'stylesheet']
+                self.assertTrue(styles)
+                for href in styles:
+                    self.assertRegex(urlsplit(href).path, r'^/_astro/[\w.-]+\.css$')
+                for tag, a in elements:
+                    href = a.get('href', '')
+                    if href.startswith('#'):
+                        self.assertIn(href[1:], ids)
+                    source = a.get('src') or (href if tag == 'link' and a.get('rel') in ('stylesheet', 'icon', 'preload') else None)
+                    if source and source.startswith('/'):
+                        self.assertTrue((self.out / urlsplit(source).path.lstrip('/')).is_file(), source)
 
-    def test_asset_changes_bust_cache(self):
+    def test_cloud_products_and_grant_status(self):
+        for filename, (lang, _, _) in PAGES.items():
+            page = Page((self.out / filename).read_text())
+            text = ' '.join(page.text)
+            if filename in ('index.html', 'en/index.html'):
+                for name in ('EC2', 'S3', 'EFS', 'Kubernetes', 'PostgreSQL', 'ClickHouse'):
+                    self.assertIn(name, text)
+                products = [a for tag, a in page.elements if tag == 'article' and 'product' in a.get('class', '').split()]
+                self.assertEqual(len(products), 6)
+            if '/grants/' in filename:
+                self.assertIn('приём заявок не открыт' if lang == 'ru' else 'applications are not open', text.lower())
+                self.assertNotRegex(text, r'[€£₽]|\$\s?\d|\d\s?(?:USD|EUR|RUB)')
+                self.assertNotIn('simulator', text.lower())
+
+    def test_bundle_and_actual_receiver(self):
+        paths = {p.relative_to(self.out).as_posix() for p in self.out.rglob('*') if p.is_file()}
+        self.assertTrue(FILES < paths)
+        self.assertTrue(all(name in FILES or CSS.fullmatch(name) for name in paths))
+        archive = Path(self.tmp.name) / 'site.tar.gz'
+        package(self.out, archive)
+        with tarfile.open(archive) as tar:
+            self.assertEqual(set(tar.getnames()), paths)
+        with tempfile.TemporaryDirectory() as target:
+            result = subprocess.run([sys.executable, '-c',
+                'from pathlib import Path; import scripts.receive_cloud as r; '
+                'r.ROOT=Path(__import__("sys").argv[1]); r.main()', target],
+                input=archive.read_bytes(), cwd=ROOT, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for path in paths:
+                self.assertEqual((Path(target) / path).read_bytes(), (self.out / path).read_bytes())
+
+    def test_packaging_rejects_unsafe_destinations(self):
+        with self.assertRaises(ValueError):
+            package(self.out, self.out / 'site.tar.gz')
         with tempfile.TemporaryDirectory() as directory:
-            tmp = Path(directory)
-            source = tmp / 'source'
-            for name in (*b.ASSETS, *b.PAGES):
-                target = source / name
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(b.ROOT / name, target)
-            with mock.patch.object(b, 'ROOT', source):
-                b.build(tmp / 'before')
-                css = source / 'assets/cloud-coming.css'
-                css.write_text(css.read_text() + '\n')
-                b.build(tmp / 'after')
-            before = (tmp / 'before/index.html').read_text()
-            after = (tmp / 'after/index.html').read_text()
-            pattern = r'/assets/cloud-coming\.css\?v=([0-9a-f]{12})'
-            self.assertNotEqual(re.findall(pattern, before), re.findall(pattern, after))
-            self.assertEqual(len(re.findall(pattern, before)), 1)
-            self.assertEqual(len(re.findall(pattern, after)), 1)
-
-    def test_locales(self):
-        cases = {
-            "index.html": ("cloud.html", f"{CLOUD}/", "/en/", f"{BRAND}/"),
-            "en/index.html": ("en/cloud.html", f"{CLOUD}/en/", "/", f"{BRAND}/en/"),
-        }
-        for dst, (src, canon, other, brand) in cases.items():
-            with self.subTest(dst):
-                html = (self.out / dst).read_text(encoding="utf-8")
-                orig = (b.ROOT / src).read_text(encoding="utf-8")
-                self.assertIn(f'rel="canonical" href="{canon}"', html)
-                self.assertIn(f'og:url" content="{canon}"', html)
-                self.assertIn(f'hreflang="ru" href="{CLOUD}/"', html)
-                self.assertIn(f'hreflang="en" href="{CLOUD}/en/"', html)
-                self.assertIn(f'<a href="{other}" hreflang=', html)
-                self.assertIn(f'class="brand" href="{brand}"', html)
-                self.assertIn(f'class="btn" href="{brand}"', html)
-                self.assertRegex(html, r'/assets/cloud-coming\.css\?v=[0-9a-f]{12}')
-                self.assertRegex(html, r'/images/D\.svg\?v=[0-9a-f]{12}')
-                self.assertNotIn("cloud.html", html)
-                self.assertEqual(H1.findall(html), H1.findall(orig))
-                self.assertEqual(len(H1.findall(html)), 1)
+            root = Path(directory)
+            (root / 'link').symlink_to(self.out / 'index.html')
+            with self.assertRaises(ValueError):
+                package(root, Path(self.tmp.name) / 'invalid.tar.gz')
+        with self.assertRaises(ValueError):
+            build(self.out)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

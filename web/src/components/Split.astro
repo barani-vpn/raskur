@@ -1,0 +1,17 @@
+---
+import type { Link } from '../content/site';
+
+interface Props { id?: string; eyebrow: string; title: string; text?: string; link?: Link }
+const { id, eyebrow, title, text, link } = Astro.props;
+---
+<section class="section" id={id} aria-labelledby={`${id ?? 'split'}-title`}>
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow">{eyebrow}</p>
+      <h2 id={`${id ?? 'split'}-title`}>{title}</h2>
+      {text && <p class="split-text">{text}</p>}
+      {link && <a class="text-link" href={link.href}>{link.label} <span aria-hidden="true">↗</span></a>}
+    </div>
+    <slot />
+  </div>
+</section>

@@ -1,0 +1,5 @@
+---
+interface Props { items: { kicker?: string; title: string; text: string }[]; numbered?: boolean }
+const { items, numbered = false } = Astro.props;
+---
+<ol class="toprule">{items.map((i, n) => <li><span>{numbered ? `0${n + 1}` : i.kicker}</span><h3>{i.title}</h3><p>{i.text}</p></li>)}</ol>

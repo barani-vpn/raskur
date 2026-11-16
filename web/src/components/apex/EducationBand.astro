@@ -1,0 +1,17 @@
+---
+import { lines, type Lines, type Link } from '../../content/site';
+interface Props { eyebrow: string; title: Lines; text: string; cta: Link }
+const { eyebrow, title, text, cta } = Astro.props;
+---
+<section class="education-band"><div class="wrap">
+  <div><p class="eyebrow">{eyebrow}</p><h2>{lines(title).map((l, i) => <>{i > 0 && <br />}{l}</>)}</h2></div>
+  <div><p>{text}</p><a class="btn" href={cta.href}>{cta.label} <span aria-hidden="true">↗</span></a></div>
+</div></section>
+
+<style>
+  .education-band{background:var(--ink);color:#fff;padding-block:62px;border-bottom:1px solid #594260}
+  .wrap{display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:start}
+  .eyebrow{color:#efb18b}
+  p:not(.eyebrow){color:#dfd4e4;font-size:17px;line-height:1.7;margin-bottom:26px}
+  @media(max-width:800px){.wrap{grid-template-columns:1fr;gap:26px}.education-band{padding-block:44px}}
+</style>

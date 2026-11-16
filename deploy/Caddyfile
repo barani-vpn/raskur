@@ -1,0 +1,22 @@
+{
+    admin off
+    auto_https off
+}
+
+http://:18731 {
+    bind 127.0.0.1
+    header Cache-Control no-cache
+    root * /var/www/raskur-cloud
+
+    @frontdoor {
+        host raskur.tech
+        not path /_astro/* /images/* /fonts/*
+    }
+    handle @frontdoor {
+        root * /var/www/raskur-cloud/frontdoor
+        file_server
+    }
+    handle {
+        file_server
+    }
+}

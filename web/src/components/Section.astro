@@ -1,0 +1,15 @@
+---
+import { lines, type Lines } from '../content/site';
+
+interface Props { id?: string; eyebrow: string; title: Lines; text?: string; tint?: boolean }
+const { id, eyebrow, title, text, tint = false } = Astro.props;
+---
+<section class:list={['section', { tint }]} id={id} aria-labelledby={id && `${id}-title`}>
+  <div class="wrap">
+    <div class="section-intro">
+      <div><p class="eyebrow">{eyebrow}</p><h2 id={id && `${id}-title`}>{lines(title).map((l, i) => <>{i > 0 && <br />}{l}</>)}</h2></div>
+      {text && <p>{text}</p>}
+    </div>
+    <slot />
+  </div>
+</section>

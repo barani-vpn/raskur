@@ -1,0 +1,28 @@
+---
+import { lines, type Lines, type Link } from '../content/site';
+
+interface Props {
+  eyebrow: string;
+  title: Lines;
+  lede: string;
+  primary: Link;
+  secondary?: Link;
+  note?: string;
+  tone?: 'dark' | 'light';
+  arrow?: string;
+}
+const { eyebrow, title, lede, primary, secondary, note, tone = 'dark', arrow = '↗' } = Astro.props;
+---
+<section class={`hero hero--${tone}`}><div class="wrap hero-grid">
+  <div class="hero-copy">
+    <p class="eyebrow">{eyebrow}</p>
+    <h1>{lines(title).map((l, i) => <>{i > 0 && <br />}{l}</>)}</h1>
+    <p class="lede">{lede}</p>
+    <div class="actions">
+      <a class="btn" href={primary.href}>{primary.label} <span aria-hidden="true">{arrow}</span></a>
+      {secondary && <a class="text-link" href={secondary.href}>{secondary.label}</a>}
+    </div>
+    {note && <p class="hero-note">{note}</p>}
+  </div>
+  <slot />
+</div></section>

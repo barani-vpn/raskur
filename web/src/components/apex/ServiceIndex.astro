@@ -1,0 +1,16 @@
+---
+import type { Link } from '../../content/site';
+interface Props { items: Link[] }
+const { items } = Astro.props;
+---
+<div class="service-index">{items.map((i, n) => <a href={i.href}><span>0{n + 1}</span>{i.label} <b aria-hidden="true">↗</b></a>)}</div>
+
+<style>
+  .service-index{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
+  a{display:flex;align-items:center;gap:14px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:26px 22px;text-decoration:none;font-size:15px}
+  a:hover{background:var(--surface);text-decoration:underline}
+  span{font:11px/1 ui-monospace,monospace;color:var(--muted)}
+  b{margin-left:auto;font:20px system-ui,sans-serif}
+  @media(max-width:1000px){.service-index{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media(max-width:540px){.service-index{grid-template-columns:1fr}a{padding:22px}}
+</style>

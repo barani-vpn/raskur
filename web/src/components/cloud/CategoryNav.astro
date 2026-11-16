@@ -1,0 +1,13 @@
+---
+import type { Link } from '../../content/site';
+interface Props { aria: string; items: Link[] }
+const { aria, items } = Astro.props;
+---
+<nav class="category-nav wrap" aria-label={aria}>{items.map((i) => <a href={i.href}>{i.label}</a>)}</nav>
+
+<style>
+  .category-nav{display:flex;justify-content:space-between;gap:20px;border-bottom:1px solid var(--line);padding-top:20px;padding-bottom:20px;font-size:14px}
+  a{min-height:32px;display:flex;align-items:center;text-decoration:none}
+  a:hover{text-decoration:underline}
+  @media(max-width:800px){.category-nav{gap:22px;overflow-x:auto;justify-content:flex-start;white-space:nowrap}}
+</style>

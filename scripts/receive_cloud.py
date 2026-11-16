@@ -2,6 +2,7 @@
 import fcntl
 import io
 import os
+import re
 import resource
 from pathlib import Path
 import sys
@@ -10,10 +11,12 @@ import tempfile
 
 ROOT = Path('/var/www/raskur-cloud')
 FILES = {
-    'index.html', 'en/index.html', 'assets/cloud-coming.css', 'images/D.svg',
-    'images/favicon32.png', 'images/og.jpg', 'fonts/Dodo_Rounded_v2-VF.woff2',
-    'fonts/Pragmatica.ttf',
+    'index.html', 'en/index.html', 'frontdoor/index.html', 'frontdoor/en/index.html',
+    'frontdoor/grants/index.html', 'frontdoor/en/grants/index.html',
+    'images/D.svg', 'images/favicon32.png', 'images/og.jpg',
+    'fonts/Dodo_Rounded_v2-VF.woff2', 'fonts/Pragmatica.ttf',
 }
+CSS = re.compile(r'_astro/[A-Za-z0-9_-][A-Za-z0-9_.-]*\.css')
 MAX_ARCHIVE = 8 * 1024 * 1024
 
 
@@ -27,8 +30,10 @@ def main():
     with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as archive:
         members = archive.getmembers()
         names = [m.name for m in members]
-        if len(names) != len(FILES) or set(names) != FILES:
+        if len(names) > 64 or len(names) != len(set(names)) or not FILES < set(names):
             raise ValueError('unexpected archive contents')
+        if any(name not in FILES and not CSS.fullmatch(name) for name in names):
+            raise ValueError('unexpected archive path')
         if any(not m.isfile() or m.size > MAX_ARCHIVE for m in members):
             raise ValueError('invalid archive member')
         if sum(m.size for m in members) > MAX_ARCHIVE:

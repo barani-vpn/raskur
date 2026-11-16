@@ -1,0 +1,33 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import Hero from '../components/Hero.astro';
+import Section from '../components/Section.astro';
+import Split from '../components/Split.astro';
+import SpecTable from '../components/SpecTable.astro';
+import FAQ from '../components/FAQ.astro';
+import ProductCard from '../components/ProductCard.astro';
+import TopRuleList from '../components/TopRuleList.astro';
+import PlatformMap from '../components/cloud/PlatformMap.astro';
+import CategoryNav from '../components/cloud/CategoryNav.astro';
+import { cloud } from '../content/cloud';
+import type { Lang } from '../content/site';
+
+const { lang } = Astro.props as { lang: Lang };
+const c = cloud[lang];
+---
+<SiteLayout site="cloud" lang={lang} path="/" title={c.meta.title} description={c.meta.description} ogDescription={c.meta.ogDescription} announcement={c.announcement}>
+  <Hero {...c.hero}><PlatformMap {...c.map} /></Hero>
+  <CategoryNav {...c.categories} />
+  <Section id="products" eyebrow={c.products.eyebrow} title={c.products.title} text={c.products.text}>
+    <div class="card-grid">
+      {c.products.items.map((p) => <ProductCard {...p} tag={c.products.tag} summary={c.products.summary} />)}
+    </div>
+  </Section>
+  <Section id="workloads" tint eyebrow={c.workloads.eyebrow} title={c.workloads.title} text={c.workloads.text}>
+    <TopRuleList items={c.workloads.items} />
+  </Section>
+  <Split id="availability" eyebrow={c.availability.eyebrow} title={c.availability.title} text={c.availability.text} link={c.availability.link}>
+    <SpecTable rows={c.availability.rows} />
+  </Split>
+  <Section eyebrow={c.faq.eyebrow} title={c.faq.title}><FAQ items={c.faq.items} /></Section>
+</SiteLayout>

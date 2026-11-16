@@ -1,0 +1,35 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import Hero from '../components/Hero.astro';
+import Section from '../components/Section.astro';
+import Split from '../components/Split.astro';
+import SpecTable from '../components/SpecTable.astro';
+import FAQ from '../components/FAQ.astro';
+import ProductCard from '../components/ProductCard.astro';
+import TopRuleList from '../components/TopRuleList.astro';
+import GrantsArt from '../components/grants/GrantsArt.astro';
+import { grants } from '../content/grants';
+import type { Lang } from '../content/site';
+
+const { lang } = Astro.props as { lang: Lang };
+const c = grants[lang];
+---
+<SiteLayout site="apex" lang={lang} path="/grants/" title={c.meta.title} description={c.meta.description} ogTitle={c.meta.ogTitle} ogDescription={c.meta.ogDescription} announcement={c.announcement}>
+  <Hero {...c.hero} arrow="↓"><GrantsArt /></Hero>
+  <div class="wrap facts"><SpecTable strip rows={c.facts} /></div>
+  <Split id="purpose" eyebrow={c.purpose.eyebrow} title={c.purpose.title}>
+    <div class="prose">{c.purpose.paragraphs.map((p) => <p>{p}</p>)}</div>
+  </Split>
+  <Section id="outline" tint eyebrow={c.areas.eyebrow} title={c.areas.title} text={c.areas.text}>
+    <div class="card-grid" style="--cols:4">
+      {c.areas.items.map((a, i) => <ProductCard icon={`0${i + 1}`} tag={c.areas.tag} title={a.title} text={a.text} />)}
+    </div>
+  </Section>
+  <Section id="audience" eyebrow={c.audience.eyebrow} title={c.audience.title} text={c.audience.text}>
+    <SpecTable rows={c.audience.rows} />
+  </Section>
+  <Section id="process" tint eyebrow={c.process.eyebrow} title={c.process.title} text={c.process.text}>
+    <TopRuleList numbered items={c.process.items} />
+  </Section>
+  <Section id="faq" eyebrow={c.faq.eyebrow} title={c.faq.title}><FAQ items={c.faq.items} /></Section>
+</SiteLayout>

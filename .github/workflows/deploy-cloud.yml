@@ -1,4 +1,4 @@
-name: Deploy cloud preview
+name: Deploy raskur sites
 
 on:
   push:
@@ -16,12 +16,25 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Test and build
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci --prefix web
+      - name: Build and test
+        env:
+          RASKUR_BUILD_DIR: ${{ runner.temp }}/raskur-sites
+          PYTHONDONTWRITEBYTECODE: '1'
         run: |
-          python3 -m unittest discover -s tests
-          python3 scripts/build_cloud.py "$RUNNER_TEMP/raskur-cloud"
+          python3 scripts/build_cloud.py "$RASKUR_BUILD_DIR" "$RUNNER_TEMP/raskur-sites.tar.gz"
+          python3 -m unittest discover -s tests -v
       - name: Deploy
         env:
           DEPLOY_KEY: ${{ secrets.RASKUR_CLOUD_DEPLOY_KEY }}
@@ -30,11 +43,12 @@ jobs:
           install -d -m 700 "$HOME/.ssh"
           printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/raskur-cloud"
           chmod 600 "$HOME/.ssh/raskur-cloud"
-          tar -czf - -C "$RUNNER_TEMP/raskur-cloud" \
-            index.html en/index.html assets/cloud-coming.css images/D.svg \
-            images/favicon32.png images/og.jpg fonts/Dodo_Rounded_v2-VF.woff2 \
-            fonts/Pragmatica.ttf | \
-            ssh -T -p 6767 -i "$HOME/.ssh/raskur-cloud" \
-              -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-              -o UserKnownHostsFile="$GITHUB_WORKSPACE/.github/raskur-known-hosts" \
-              raskurdeploy@193.34.213.72
+          ssh -T -p 6767 -i "$HOME/.ssh/raskur-cloud" \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$GITHUB_WORKSPACE/.github/raskur-known-hosts" \
+            raskurdeploy@193.34.213.72 < "$RUNNER_TEMP/raskur-sites.tar.gz"
+      - name: Verify cloud deployment
+        run: |
+          curl --fail --silent --show-error --retry 3 --max-time 30 \
+            "https://cloud.raskur.tech/?deployment=$GITHUB_SHA" -o "$RUNNER_TEMP/live.html"
+          cmp "$RUNNER_TEMP/live.html" "$RUNNER_TEMP/raskur-sites/index.html"

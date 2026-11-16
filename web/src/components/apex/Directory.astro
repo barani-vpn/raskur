@@ -1,0 +1,29 @@
+---
+interface Props { aria: string; eyebrow: string; items: { title: string; text: string; status: string; href: string }[] }
+const { aria, eyebrow, items } = Astro.props;
+---
+<div class="directory" aria-label={aria}>
+  <p class="eyebrow">{eyebrow}</p>
+  {items.map((i, n) => (
+    <a href={i.href}>
+      <span class="num">0{n + 1}</span>
+      <div><h2>{i.title}</h2><p>{i.text}</p><span class="status">{i.status}</span></div>
+      <b aria-hidden="true">↗</b>
+    </a>
+  ))}
+</div>
+
+<style>
+  .directory{background:#fff;padding:28px;border:1px solid var(--line);border-top:3px solid var(--orange);border-radius:6px;color:var(--ink)}
+  .directory>.eyebrow{color:var(--plum)}
+  a{display:flex;align-items:flex-start;gap:18px;text-decoration:none;padding:24px 0;border-top:1px solid var(--line)}
+  a:last-child{padding-bottom:0}
+  .num{font:11px/1.5 ui-monospace,monospace;color:var(--muted);padding-top:4px}
+  h2{font-size:24px;letter-spacing:-.02em}
+  p:not(.eyebrow){font-size:13px;margin:8px 0 12px;color:var(--muted)}
+  .status{display:inline-block;font-size:10px;line-height:1.5;border:1px solid var(--line);padding:3px 7px;border-radius:3px;color:var(--muted)}
+  b{margin-left:auto;font:22px system-ui,sans-serif}
+  a:hover h2{text-decoration:underline;text-underline-offset:4px}
+  @media(max-width:800px){.directory{max-width:560px}}
+  @media(max-width:540px){.directory{padding:22px}}
+</style>
