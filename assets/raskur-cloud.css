@@ -46,7 +46,7 @@
 
 .main-cover .cover-menu .menu-section a:hover,
 .main-cover .cover-menu .menu-section a:focus-visible {
-  color: #fff;
+  color: #000;
   background-color: rgb(var(--rc-orange));
   transition: background-color var(--rc-ease), color var(--rc-ease);
 }
