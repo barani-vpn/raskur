@@ -1,4 +1,4 @@
-@font-face{font-family:"Dodo-Rounded";src:url("/fonts/Dodo_Rounded_v2-VF.woff2") format("woff2-variations"),url("/fonts/Dodo_Rounded_v2-VF.ttf") format("truetype");font-weight:100 700;font-display:swap}
+@font-face{font-family:"Dodo-Rounded";src:url("/fonts/Dodo_Rounded_v2-VF.woff2") format("woff2-variations");font-weight:100 700;font-display:swap}
 @font-face{font-family:"Pragmatica";src:url("/fonts/Pragmatica.ttf") format("truetype");font-weight:400;font-display:swap}
 :root{--bg:#1c0e25;--bg2:#2a1636;--line:rgba(246,238,248,.16);--text:#f6eef8;--muted:#c9b8d3;--orange:#ff6900;--gap:clamp(16px,3vw,32px)}
 *{box-sizing:border-box}

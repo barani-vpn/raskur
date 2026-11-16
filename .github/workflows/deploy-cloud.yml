@@ -1,0 +1,40 @@
+name: Deploy cloud preview
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: raskur-cloud-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Test and build
+        run: |
+          python3 -m unittest discover -s tests
+          python3 scripts/build_cloud.py "$RUNNER_TEMP/raskur-cloud"
+      - name: Deploy
+        env:
+          DEPLOY_KEY: ${{ secrets.RASKUR_CLOUD_DEPLOY_KEY }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/raskur-cloud"
+          chmod 600 "$HOME/.ssh/raskur-cloud"
+          tar -czf - -C "$RUNNER_TEMP/raskur-cloud" \
+            index.html en/index.html assets/cloud-coming.css images/D.svg \
+            images/favicon32.png images/og.jpg fonts/Dodo_Rounded_v2-VF.woff2 \
+            fonts/Pragmatica.ttf | \
+            ssh -T -p 6767 -i "$HOME/.ssh/raskur-cloud" \
+              -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              -o UserKnownHostsFile="$GITHUB_WORKSPACE/.github/raskur-known-hosts" \
+              raskurdeploy@193.34.213.72
