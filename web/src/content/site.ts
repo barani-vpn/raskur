@@ -50,16 +50,7 @@ export const headerNav = (site: Site, lang: Lang): Link[] => {
 
 export const footer = (site: Site, lang: Lang): { links: Link[]; note: string } => {
   const l = label[lang];
-  const note = {
-    cloud: {
-      ru: 'Додо Раскур Cloud. Названия сторонних продуктов принадлежат их правообладателям.',
-      en: 'Dodo Raskur Cloud. Third-party product names belong to their respective owners.',
-    },
-    apex: {
-      ru: 'Додо Раскур. Независимый проект, не связанный с «Додо Пиццей».',
-      en: 'Dodo Raskur. An independent project, not affiliated with Dodo Pizza.',
-    },
-  }[site][lang];
+  const note = { ru: 'независимьій проект', en: 'independent project' }[lang];
   const links =
     site === 'cloud'
       ? [

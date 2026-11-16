@@ -53,10 +53,13 @@ class SitesTest(unittest.TestCase):
         self.assertEqual(pages, set(PAGES))
         for filename, (lang, canonical, other) in PAGES.items():
             with self.subTest(page=filename):
-                page = Page((self.out / filename).read_text())
+                html = (self.out / filename).read_text()
+                page = Page(html)
                 elements = page.elements
                 self.assertTrue(any(tag == 'html' and attrs.get('lang') == lang for tag, attrs in elements))
                 self.assertEqual(sum(tag == 'h1' for tag, _ in elements), 1)
+                note = 'независимьій проект' if lang == 'ru' else 'independent project'
+                self.assertIsNotNone(re.search(rf'<div class="wrap footer-note"[^>]*>{re.escape(note)}</div>', html), f'{filename}: footer must contain only the independent-project note')
                 self.assertTrue(any(tag == 'link' and a.get('rel') == 'canonical' and a.get('href') == canonical for tag, a in elements))
                 self.assertTrue(any(tag == 'a' and a.get('hreflang') and urlsplit(a.get('href', '')).path == other for tag, a in elements))
                 self.assertFalse({'script', 'iframe', 'form', 'input'} & {tag for tag, _ in elements})
