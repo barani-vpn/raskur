@@ -10,7 +10,7 @@ import unittest
 from urllib.parse import urlsplit
 
 from scripts.build_cloud import build, package
-from scripts.receive_cloud import FILES, CSS
+from scripts.receive_cloud import FILES, CSS, BINARY
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGES = {
@@ -20,7 +20,12 @@ PAGES = {
     'frontdoor/en/index.html': ('en', 'https://raskur.tech/en/', '/'),
     'frontdoor/grants/index.html': ('ru', 'https://raskur.tech/grants/', '/en/grants/'),
     'frontdoor/en/grants/index.html': ('en', 'https://raskur.tech/en/grants/', '/grants/'),
+    'register/index.html': ('ru', 'https://cloud.raskur.tech/register/', '/en/register/'),
+    'en/register/index.html': ('en', 'https://cloud.raskur.tech/en/register/', '/register/'),
+    'frontdoor/grants/register/index.html': ('ru', 'https://raskur.tech/grants/register/', '/en/grants/register/'),
+    'frontdoor/en/grants/register/index.html': ('en', 'https://raskur.tech/en/grants/register/', '/grants/register/'),
 }
+RECEIPTS = {f'registration-receipt/{kind}/{lang}/index.html' for kind in ('cloud', 'edu') for lang in ('ru', 'en')}
 
 
 class Page(HTMLParser):
@@ -34,6 +39,14 @@ class Page(HTMLParser):
 
     def handle_data(self, data):
         self.text.append(data)
+
+
+REGISTRATIONS = {
+    'register/index.html': ('cloud', 'ru'),
+    'en/register/index.html': ('cloud', 'en'),
+    'frontdoor/grants/register/index.html': ('edu', 'ru'),
+    'frontdoor/en/grants/register/index.html': ('edu', 'en'),
+}
 
 
 class SitesTest(unittest.TestCase):
@@ -50,7 +63,7 @@ class SitesTest(unittest.TestCase):
 
     def test_routes_metadata_assets_and_links(self):
         pages = {p.relative_to(self.out).as_posix() for p in self.out.rglob('*.html')}
-        self.assertEqual(pages, set(PAGES))
+        self.assertEqual(pages, set(PAGES) | RECEIPTS)
         for filename, (lang, canonical, other) in PAGES.items():
             with self.subTest(page=filename):
                 html = (self.out / filename).read_text()
@@ -62,7 +75,8 @@ class SitesTest(unittest.TestCase):
                 self.assertIsNotNone(re.search(rf'<div class="wrap footer-note"[^>]*>{re.escape(note)}</div>', html), f'{filename}: footer must contain only the independent-project note')
                 self.assertTrue(any(tag == 'link' and a.get('rel') == 'canonical' and a.get('href') == canonical for tag, a in elements))
                 self.assertTrue(any(tag == 'a' and a.get('hreflang') and urlsplit(a.get('href', '')).path == other for tag, a in elements))
-                self.assertFalse({'script', 'iframe', 'form', 'input'} & {tag for tag, _ in elements})
+                self.assertFalse({'script', 'iframe'} & {tag for tag, _ in elements})
+                self.assertEqual(sum(tag == 'form' for tag, _ in elements), int(filename in REGISTRATIONS))
                 ids = [a['id'] for _, a in elements if 'id' in a]
                 self.assertEqual(len(ids), len(set(ids)))
                 styles = [a['href'] for tag, a in elements if tag == 'link' and a.get('rel') == 'stylesheet']
@@ -88,23 +102,63 @@ class SitesTest(unittest.TestCase):
                 self.assertFalse(stale in copy, f'{filename}: obsolete copy {stale!r}')
             for tag, attrs in page.elements:
                 if tag == 'a':
-                    self.assertNotRegex(attrs.get('href', ''), r'(?i)(?:^|[/#?=])(signup|sign-up|register|apply|checkout|payment)(?:[/?#=&]|$)')
+                    self.assertNotRegex(attrs.get('href', ''), r'(?i)(?:^|[/#?=])(checkout|payment)(?:[/?#=&]|$)')
             if filename in ('index.html', 'en/index.html'):
                 for name in ('EC2', 'S3', 'EFS', 'Kubernetes', 'PostgreSQL', 'ClickHouse'):
                     self.assertIn(name, text)
                 products = [a for tag, a in page.elements if tag == 'article' and 'product' in a.get('class', '').split()]
                 self.assertEqual(len(products), 6)
-            if '/grants/' in filename:
+            if filename in ('frontdoor/grants/index.html', 'frontdoor/en/grants/index.html'):
                 for term in ('Raskur Scholars', 'Admission Track', 'Study Grant', '€20 000'):
                     self.assertIn(term, text)
                 self.assertIn('ведущие университеты Европы' if lang == 'ru' else 'leading European universities', text)
                 self.assertIn('не гарантирует поступление' if lang == 'ru' else 'does not guarantee admission', text)
                 self.assertNotIn('simulator', text.lower())
 
+    def test_registration_forms(self):
+        for filename, (kind, lang) in REGISTRATIONS.items():
+            with self.subTest(page=filename):
+                self.assertTrue((self.out / filename).is_file(), 'registration route missing')
+                page = Page((self.out / filename).read_text())
+                forms = [a for tag, a in page.elements if tag == 'form']
+                self.assertEqual(len(forms), 1)
+                self.assertEqual(forms[0].get('method'), 'post')
+                self.assertEqual(forms[0].get('action'), f'/api/registrations/{kind}')
+                controls = {a['name']: a for tag, a in page.elements if tag in ('input', 'select', 'textarea')}
+                expected = {'lang', 'name', 'email', 'consent', 'website', 'message', 'timeline'}
+                expected |= {'company', 'role', 'service'} if kind == 'cloud' else {'country', 'age', 'stage', 'subject', 'support'}
+                self.assertEqual(set(controls), expected)
+                self.assertEqual(controls['lang']['value'], lang)
+                self.assertEqual(controls['email']['type'], 'email')
+                self.assertEqual(controls['consent']['type'], 'checkbox')
+                self.assertIn('required', controls['consent'])
+                self.assertNotIn('checked', controls['consent'])
+                self.assertEqual(controls['message']['maxlength'], '1000')
+                labels = {a['for'] for tag, a in page.elements if tag == 'label' and 'for' in a}
+                for name, attrs in controls.items():
+                    if attrs.get('type') != 'hidden':
+                        self.assertIn(attrs.get('id'), labels, name)
+                self.assertTrue(any(tag == 'details' and a.get('id') == 'privacy' for tag, a in page.elements))
+
+    def test_receipt_templates(self):
+        for filename in RECEIPTS:
+            html = (self.out / filename).read_text()
+            page = Page(html)
+            self.assertEqual(sum(tag == 'h1' for tag, _ in page.elements), 1)
+            self.assertIn('__REQUEST_ID__', html)
+            self.assertIn('__REQUEST_STATE__', html)
+            self.assertTrue(any(tag == 'meta' and a.get('name') == 'robots' and 'noindex' in a.get('content', '') for tag, a in page.elements))
+            forms = [a for tag, a in page.elements if tag == 'form']
+            self.assertEqual(len(forms), 1)
+            self.assertEqual(forms[0]['action'], '/api/registrations/withdraw')
+            self.assertEqual(forms[0]['method'], 'post')
+            self.assertEqual({a['name'] for tag, a in page.elements if tag == 'input'}, {'id', 'lang'})
+
     def test_bundle_and_actual_receiver(self):
         paths = {p.relative_to(self.out).as_posix() for p in self.out.rglob('*') if p.is_file()}
         self.assertTrue(FILES < paths)
-        self.assertTrue(all(name in FILES or CSS.fullmatch(name) for name in paths))
+        self.assertTrue(all(name in FILES or name == BINARY or CSS.fullmatch(name) for name in paths))
+        self.assertIn(BINARY, paths)
         archive = Path(self.tmp.name) / 'site.tar.gz'
         package(self.out, archive)
         with tarfile.open(archive) as tar:
@@ -112,11 +166,16 @@ class SitesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as target:
             result = subprocess.run([sys.executable, '-c',
                 'from pathlib import Path; import scripts.receive_cloud as r; '
-                'r.ROOT=Path(__import__("sys").argv[1]); r.main()', target],
+                'r.ROOT=Path(__import__("sys").argv[1]); '
+                'r.BINARY_TARGET=r.ROOT.parent/(r.ROOT.name+"-api"); '
+                'r.RESTART=["/usr/bin/true"]; r.main()', target],
                 input=archive.read_bytes(), cwd=ROOT, capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr)
-            for path in paths:
+            for path in paths - {BINARY}:
                 self.assertEqual((Path(target) / path).read_bytes(), (self.out / path).read_bytes())
+            binary = Path(target).parent / (Path(target).name + '-api')
+            self.assertEqual(binary.read_bytes(), (self.out / BINARY).read_bytes())
+            binary.unlink()
 
     def test_packaging_rejects_unsafe_destinations(self):
         with self.assertRaises(ValueError):

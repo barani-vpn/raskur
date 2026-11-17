@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Usage: build_cloud.py OUT_DIR [ARCHIVE]. Build and package the static Astro sites."""
 from pathlib import Path
+import os
 import subprocess
 import sys
 import tarfile
@@ -13,6 +14,9 @@ def build(out):
     if out.exists() and any(out.iterdir()):
         raise ValueError('output directory must be empty')
     subprocess.run(['npm', 'run', 'build', '--', '--outDir', str(out)], cwd=ROOT / 'web', check=True)
+    subprocess.run(['go', 'build', '-trimpath', '-buildvcs=false', '-ldflags=-s -w',
+                    '-o', str(out / 'registration-api'), '.'], cwd=ROOT / 'registration',
+                   env={**os.environ, 'CGO_ENABLED': '0', 'GOOS': 'linux', 'GOARCH': 'amd64'}, check=True)
 
 
 def package(out, destination):

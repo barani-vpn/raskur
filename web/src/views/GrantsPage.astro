@@ -15,7 +15,7 @@ const { lang } = Astro.props as { lang: Lang };
 const c = grants[lang];
 ---
 <SiteLayout site="apex" lang={lang} path="/grants/" title={c.meta.title} description={c.meta.description} ogTitle={c.meta.ogTitle} ogDescription={c.meta.ogDescription} announcement={c.announcement}>
-  <Hero {...c.hero} arrow="↓"><GrantsArt /></Hero>
+  <Hero {...c.hero} arrow="→"><GrantsArt /></Hero>
   <div class="wrap facts"><SpecTable strip rows={c.facts} /></div>
   <Split id="purpose" eyebrow={c.purpose.eyebrow} title={c.purpose.title}>
     <div class="prose">{c.purpose.paragraphs.map((p) => <p>{p}</p>)}</div>

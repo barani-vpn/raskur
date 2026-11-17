@@ -1,0 +1,93 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { contactFields, requestFields, registrationCopy, type RegistrationKind } from '../content/registration';
+import { publicPath, type Lang } from '../content/site';
+
+const { kind, lang } = Astro.props as { kind: RegistrationKind; lang: Lang };
+const c = registrationCopy[lang];
+const t = c[kind];
+const site = kind === 'cloud' ? 'cloud' : 'apex';
+const path = kind === 'cloud' ? '/register/' : '/grants/register/';
+const back = publicPath(kind === 'cloud' ? '/' : '/grants/', lang);
+const groups = [{ title: c.contact, fields: contactFields }, { title: t.group, fields: requestFields[kind] }];
+---
+<SiteLayout {site} {lang} {path} title={`${t.title} | Додо Раскур`} description={t.description}>
+  <div class="wrap registration">
+    <aside>
+      <a class="back" href={back}>← {t.back}</a>
+      <p class="eyebrow">{t.eyebrow}</p>
+      <h1>{t.title}</h1>
+      <p class="intro">{t.description}</p>
+      <p class="scope">{t.note}</p>
+    </aside>
+    <div class="form-card">
+      <p class="form-note">{c.required}</p>
+      <form method="post" action={`/api/registrations/${kind}`} accept-charset="UTF-8" data-registration={kind}>
+        <input type="hidden" name="lang" value={lang}>
+        <div class="trap" aria-hidden="true">
+          <label for="website">Website (leave empty)</label>
+          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+        {groups.map((group) => <fieldset>
+          <legend>{group.title}</legend>
+          <div class="fields">{group.fields.map((f) => <div class="field">
+            <label for={f.name}>{f.label[lang]}{f.optional && <span> ({c.optional})</span>}</label>
+            {f.options
+              ? <select id={f.name} name={f.name} required={!f.optional}>
+                  <option value="" disabled selected>{c.choose}</option>
+                  {f.options.map(([value, ru, en]) => <option {value}>{lang === 'ru' ? ru : en}</option>)}
+                </select>
+              : <input id={f.name} name={f.name} type={f.type || 'text'} required={!f.optional} minlength="1" maxlength={f.maxLength} autocomplete={f.autocomplete} autocapitalize={f.type === 'email' ? 'none' : undefined} />}
+          </div>)}</div>
+        </fieldset>)}
+        <div class="field message">
+          <label for="message">{t.message} <span>({c.optional})</span></label>
+          <textarea id="message" name="message" rows="4" maxlength="1000" aria-describedby="message-hint"></textarea>
+          <p id="message-hint" class="hint">{t.hint}</p>
+        </div>
+        <details id="privacy">
+          <summary>{c.privacy}</summary>
+          <p>{c.privacyText}</p>
+        </details>
+        <div class="consent">
+          <input id="consent" name="consent" type="checkbox" value="yes" required>
+          <label for="consent">{c.consent}</label>
+        </div>
+        <button class="btn" type="submit">{c.submit} <span aria-hidden="true">→</span></button>
+      </form>
+    </div>
+  </div>
+</SiteLayout>
+
+<style>
+  .registration{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:clamp(32px,6vw,90px);padding-top:48px;padding-bottom:80px}
+  .back{display:inline-block;font-size:13px;margin-bottom:42px;text-decoration:none}
+  .back:hover{text-decoration:underline}
+  .eyebrow{color:var(--plum)}
+  h1{font-size:clamp(34px,3.8vw,54px);max-width:16ch;overflow-wrap:anywhere}
+  .intro{margin-top:26px;color:var(--muted);font-size:18px;max-width:38ch}
+  .scope{border-top:1px solid var(--line);padding-top:22px;margin-top:32px;font-size:13px;color:var(--muted);max-width:45ch}
+  .form-card{border:1px solid var(--line);border-radius:8px;padding:clamp(20px,3vw,40px);min-width:0;box-shadow:0 3px 0 var(--surface)}
+  .form-note{font-size:12px;color:var(--muted);margin-bottom:26px}
+  fieldset{border:0;padding:0;margin:0 0 28px;min-width:0}
+  legend{font-size:18px;font-weight:600;margin-bottom:20px;padding:0}
+  .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+  .field{display:grid;gap:8px;align-content:start;min-width:0}
+  .field label{font-size:13px;font-weight:600}
+  label span{color:var(--muted);font-weight:400}
+  input:not([type=checkbox]),select,textarea{width:100%;min-width:0;border:1px solid #9f91a6;border-radius:4px;padding:11px 12px;font:inherit;font-size:16px;line-height:1.5;color:var(--ink);background:#fff}
+  select{padding-right:24px;min-height:48px}
+  textarea{resize:vertical;min-height:115px}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--plum);outline-offset:2px;border-color:var(--plum)}
+  input:user-invalid,select:user-invalid,textarea:user-invalid{border-color:#a82132}
+  .hint{font-size:12px;color:var(--muted)}
+  .message{margin-bottom:24px}
+  details{border-block:1px solid var(--line);padding:12px 0}
+  details p{font-size:13px}
+  .consent{display:flex;align-items:flex-start;gap:12px;margin:24px 0;font-size:13px}
+  .consent input{flex:0 0 18px;width:18px;height:18px;margin:3px 0 0;accent-color:var(--plum)}
+  button{border:0;cursor:pointer;font-family:inherit}
+  .trap{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+  @media(max-width:900px){.registration{grid-template-columns:1fr;max-width:760px}.back{margin-bottom:26px}h1{max-width:22ch}.intro,.scope{max-width:none}.scope{margin-top:20px}.form-card{box-shadow:none}}
+  @media(max-width:540px){.registration{padding-top:28px;padding-bottom:44px}.fields{grid-template-columns:1fr}.form-card{padding:22px 18px}button{width:100%}}
+</style>

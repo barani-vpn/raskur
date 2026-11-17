@@ -1,0 +1,13 @@
+---
+import RegistrationPage from '../views/RegistrationPage.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { registration: 'register' }, props: { kind: 'cloud', lang: 'ru' } },
+    { params: { registration: 'en/register' }, props: { kind: 'cloud', lang: 'en' } },
+    { params: { registration: 'frontdoor/grants/register' }, props: { kind: 'edu', lang: 'ru' } },
+    { params: { registration: 'frontdoor/en/grants/register' }, props: { kind: 'edu', lang: 'en' } },
+  ];
+}
+---
+<RegistrationPage {...Astro.props} />

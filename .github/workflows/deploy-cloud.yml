@@ -26,6 +26,10 @@ jobs:
           node-version: '24'
           cache: npm
           cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.27.x'
+          cache: false
       - name: Install
         run: npm ci --prefix web
       - name: Build and test
@@ -33,6 +37,7 @@ jobs:
           RASKUR_BUILD_DIR: ${{ runner.temp }}/raskur-sites
           PYTHONDONTWRITEBYTECODE: '1'
         run: |
+          go -C registration test -race -timeout 60s ./...
           python3 scripts/build_cloud.py "$RASKUR_BUILD_DIR" "$RUNNER_TEMP/raskur-sites.tar.gz"
           python3 -m unittest discover -s tests -v
       - name: Deploy
@@ -51,10 +56,12 @@ jobs:
         run: |
           set -euo pipefail
           for host in cloud.raskur.tech raskur.tech; do
-            paths=(/ /en/)
+            curl --fail --silent --show-error --retry 3 --max-time 15 "https://$host/healthz"
+            test "$(curl --silent --output /dev/null --write-out '%{http_code}' --max-time 15 "https://$host/registration-receipt/cloud/en/")" = 404
+            paths=(/ /en/ /register/ /en/register/)
             prefix=''
             if [[ "$host" == 'raskur.tech' ]]; then
-              paths+=(/grants/ /en/grants/)
+              paths=(/ /en/ /grants/ /en/grants/ /grants/register/ /en/grants/register/)
               prefix='frontdoor/'
             fi
             for path in "${paths[@]}"; do

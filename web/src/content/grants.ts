@@ -27,7 +27,7 @@ export const grants: Record<Lang, Content> = {
       eyebrow: 'Raskur Scholars / European University Programme',
       title: 'Ваш потенциал. Ведущие университеты Европы.',
       lede: 'Помогаем молодым людям поступать в ведущие университеты Европы. От выбора программы и подготовки к экзаменам до финансирования первого года: один образовательный маршрут и персональный наставник на каждом этапе.',
-      primary: { label: 'Изучить программу', href: '#outline' },
+      primary: { label: 'Зарегистрировать интерес', href: '/grants/register/' },
       note: 'Бакалавриат · Индивидуальная подготовка · Поддержка по академическому потенциалу и финансовой потребности',
     },
     facts: [
@@ -105,7 +105,7 @@ export const grants: Record<Lang, Content> = {
       eyebrow: 'Raskur Scholars / European University Programme',
       title: 'Your potential. Leading European universities.',
       lede: 'We help young people progress to leading European universities. From choosing a course and preparing for admissions assessments to funding the first year: one educational pathway, with a personal mentor at every stage.',
-      primary: { label: 'Explore the programme', href: '#outline' },
+      primary: { label: 'Register interest', href: '/en/grants/register/' },
       note: 'Undergraduate study · Individual preparation · Support based on academic potential and financial need',
     },
     facts: [

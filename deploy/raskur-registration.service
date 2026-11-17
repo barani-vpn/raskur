@@ -1,0 +1,38 @@
+[Unit]
+Description=Raskur registration requests
+After=network.target
+
+[Service]
+Type=exec
+User=raskur-registration
+Group=raskur-registration
+ExecStart=/opt/raskur-registration/api -listen 127.0.0.1:18732 -data /var/lib/raskur-registrations -site /var/www/raskur-cloud
+StateDirectory=raskur-registrations
+StateDirectoryMode=0700
+UMask=0077
+Environment=GOMEMLIMIT=48MiB GOMAXPROCS=2
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=15
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_UNIX
+IPAddressDeny=any
+IPAddressAllow=localhost
+MemoryMax=96M
+CPUQuota=20%
+TasksMax=48
+LimitNOFILE=256
+
+[Install]
+WantedBy=multi-user.target

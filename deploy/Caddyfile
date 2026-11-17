@@ -8,6 +8,18 @@ http://:18731 {
     header Cache-Control no-cache
     root * /var/www/raskur-cloud
 
+    @private path /registration-receipt/* /registration-api
+    handle @private {
+        respond 404
+    }
+    @registration path /api/registrations/* /requests/* /en/requests/* /healthz
+    handle @registration {
+        header Cache-Control no-store
+        reverse_proxy 127.0.0.1:18732 {
+            header_up X-Real-IP {http.request.header.Cf-Connecting-Ip}
+        }
+    }
+
     @frontdoor {
         host raskur.tech
         not path /_astro/* /images/* /fonts/*

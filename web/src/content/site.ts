@@ -34,10 +34,10 @@ export const headerNav = (site: Site, lang: Lang): Link[] => {
   const l = label[lang];
   return site === 'cloud'
     ? [
-        { label: l.products, href: '#products' },
-        { label: l.usecases, href: '#workloads' },
+        { label: l.products, href: publicPath('/', lang) + '#products' },
+        { label: l.usecases, href: publicPath('/', lang) + '#workloads' },
         { label: l.education, href: absolute('apex', '/grants/', lang) },
-        { label: l.availability, href: '#availability' },
+        { label: lang === 'ru' ? 'Регистрация' : 'Register', href: publicPath('/register/', lang) },
       ]
     : [
         { label: l.cloud, href: absolute('cloud', '/', lang) },
