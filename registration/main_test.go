@@ -41,6 +41,10 @@ func fields(kind, lang string) url.Values {
 	v := url.Values{"lang": {lang}, "name": {"Тестовый участник"}, "email": {"verification@example.invalid"}, "consent": {"yes"}, "website": {""}, "message": {"Verification only\nNo real applicant"}}
 	if kind == "cloud" {
 		v.Set("company", "Verification only")
+		v.Set("company_size", "51-200")
+		v.Set("industry", "software")
+		v.Set("country", "Georgia")
+		v.Set("company_url", "https://example.invalid")
 		v.Set("service", "compute")
 		v.Set("timeline", "exploring")
 	} else {
@@ -113,6 +117,13 @@ func TestRegistrationPersistenceReceiptAndWithdrawal(t *testing.T) {
 				}
 				if saved.Kind != kind || saved.Lang != lang || saved.Fields["email"] != v.Get("email") || !saved.Consent || saved.PrivacyVersion != "1" || saved.CreatedAt.IsZero() || !saved.CreatedAt.Equal(saved.ConsentAt) {
 					t.Fatalf("incorrect saved record: %#v", saved)
+				}
+				if kind == "cloud" {
+					for _, key := range []string{"company_size", "industry", "country", "company_url"} {
+						if saved.Fields[key] != v.Get(key) {
+							t.Fatalf("company field not saved: %s", key)
+						}
+					}
 				}
 				for _, forbidden := range []string{"192.0.2.1", `"website"`, `"password"`} {
 					if strings.Contains(string(data), forbidden) {
@@ -244,6 +255,54 @@ func TestStorageFailuresAndInvalidReceiptPaths(t *testing.T) {
 		if r.StatusCode != 404 && r.StatusCode != 405 {
 			t.Fatalf("unexpected path status: %s %d", path, r.StatusCode)
 		}
+	}
+}
+
+func TestCloudCompanyDetailsValidation(t *testing.T) {
+	for _, tc := range []struct{ field, value string }{
+		{"company_size", ""}, {"company_size", "enormous"},
+		{"industry", ""}, {"industry", "unknown"}, {"country", ""}, {"country", strings.Repeat("a", 81)},
+		{"company_url", "example.invalid"}, {"company_url", "javascript:alert(1)"},
+		{"company_url", "https:///missing-host"}, {"company_url", "https://user:secret@example.invalid"},
+		{"company_url", "https://example.invalid/a b"}, {"company_url", "https://example.invalid/" + strings.Repeat("a", 512)},
+	} {
+		t.Run(tc.field+"/"+tc.value, func(t *testing.T) {
+			a, s := fixture(t)
+			v := fields("cloud", "en")
+			v.Set(tc.field, tc.value)
+			if r := post(t, s, "cloud", v); r.StatusCode != 422 || len(records(t, a.data)) != 0 {
+				t.Fatalf("invalid %s accepted: %d", tc.field, r.StatusCode)
+			}
+		})
+	}
+	for _, value := range []string{"", "http://example.invalid/about", "https://example.invalid"} {
+		t.Run("optional URL/"+value, func(t *testing.T) {
+			a, s := fixture(t)
+			v := fields("cloud", "en")
+			v.Set("company_url", value)
+			if value == "" {
+				v.Del("company_url")
+			}
+			if r := post(t, s, "cloud", v); r.StatusCode != 303 || len(records(t, a.data)) != 1 {
+				t.Fatalf("valid company details rejected: %d", r.StatusCode)
+			}
+		})
+	}
+}
+
+func TestLegacyCloudRequestStillWorks(t *testing.T) {
+	a, s := fixture(t)
+	rec := record{ID: strings.Repeat("a", 32), Kind: "cloud", Lang: "en", Fields: map[string]string{"company": "Older request", "email": "legacy@example.invalid"}}
+	if err := a.save(rec); err != nil {
+		t.Fatal(err)
+	}
+	if r := request(t, s, "GET", "/en/requests/"+rec.ID, "cloud.raskur.tech", "", "", "", "192.0.2.1"); r.StatusCode != 200 {
+		t.Fatalf("legacy receipt: %d", r.StatusCode)
+	}
+	v := url.Values{"id": {rec.ID}, "lang": {"en"}}
+	r := request(t, s, "POST", "/api/registrations/withdraw", "cloud.raskur.tech", "https://cloud.raskur.tech", v.Encode(), "application/x-www-form-urlencoded", "192.0.2.1")
+	if r.StatusCode != 200 || len(records(t, a.data)) != 0 {
+		t.Fatal("legacy withdrawal failed")
 	}
 }
 

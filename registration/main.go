@@ -170,7 +170,10 @@ func validate(kind string, values url.Values) (map[string]string, string) {
 	optional := map[string]bool{"message": true, "website": true}
 	if kind == "cloud" {
 		lengths["company"], lengths["role"] = 120, 80
-		optional["role"] = true
+		lengths["country"], lengths["company_url"] = 80, 512
+		optional["role"], optional["company_url"] = true, true
+		choices["company_size"] = []string{"1-10", "11-50", "51-200", "201-500", "501-1000", "1001-plus"}
+		choices["industry"] = []string{"software", "financial-services", "retail", "media", "healthcare", "education-research", "manufacturing", "professional-services", "public-sector", "other"}
 		choices["service"] = []string{"compute", "s3", "efs", "kubernetes", "postgresql", "clickhouse", "multiple"}
 		choices["timeline"] = []string{"now", "quarter", "exploring"}
 	} else {
@@ -221,6 +224,12 @@ func validate(kind string, values url.Values) (map[string]string, string) {
 	address, err := mail.ParseAddress(email)
 	if err != nil || address.Address != email || address.Name != "" || strings.ContainsAny(email, " \t\r\n<>") || len(email) > 254 {
 		return nil, "email"
+	}
+	if companyURL := clean["company_url"]; companyURL != "" {
+		u, err := url.Parse(companyURL)
+		if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.User != nil || strings.ContainsFunc(companyURL, unicode.IsSpace) {
+			return nil, "company_url"
+		}
 	}
 	delete(clean, "lang")
 	delete(clean, "consent")

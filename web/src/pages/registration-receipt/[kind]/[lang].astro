@@ -11,7 +11,7 @@ const c = registrationCopy[lang];
 const site = kind === 'cloud' ? 'cloud' : 'apex';
 const register = publicPath(kind === 'cloud' ? '/register/' : '/grants/register/', lang);
 ---
-<SiteLayout {site} {lang} path="/requests/__REQUEST_ID__" title={`${c[kind].title} | Додо Раскур`} description={c[kind].note}>
+<SiteLayout {site} {lang} path="/requests/__REQUEST_ID__" title={`${c[kind].title} | Додо Раскур`} description={c[kind].description}>
   <meta slot="head" name="robots" content="noindex, nofollow">
   <section class="wrap receipt" data-request-state="__REQUEST_STATE__">
     <p class="eyebrow">{c[kind].eyebrow}</p>
@@ -21,7 +21,7 @@ const register = publicPath(kind === 'cloud' ? '/register/' : '/grants/register/
     <div class="received">
       <dl><dt>{c.reference}</dt><dd><code>__REQUEST_ID__</code></dd></dl>
       <p class="hint">{c.keepLink}</p>
-      <p class="scope">{c[kind].note}</p>
+      {c[kind].note && <p class="scope">{c[kind].note}</p>}
       <details>
         <summary>{c.withdrawTitle}</summary>
         <p>{c.withdrawText}</p>

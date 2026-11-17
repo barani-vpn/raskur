@@ -126,10 +126,16 @@ class SitesTest(unittest.TestCase):
                 self.assertEqual(forms[0].get('action'), f'/api/registrations/{kind}')
                 controls = {a['name']: a for tag, a in page.elements if tag in ('input', 'select', 'textarea')}
                 expected = {'lang', 'name', 'email', 'consent', 'website', 'message', 'timeline'}
-                expected |= {'company', 'role', 'service'} if kind == 'cloud' else {'country', 'age', 'stage', 'subject', 'support'}
+                expected |= {'company', 'company_size', 'industry', 'country', 'company_url', 'role', 'service'} if kind == 'cloud' else {'country', 'age', 'stage', 'subject', 'support'}
                 self.assertEqual(set(controls), expected)
                 self.assertEqual(controls['lang']['value'], lang)
                 self.assertEqual(controls['email']['type'], 'email')
+                if kind == 'cloud':
+                    for name in ('company_size', 'industry', 'country'):
+                        self.assertIn('required', controls[name])
+                    self.assertEqual(controls['company_url']['type'], 'url')
+                    self.assertNotIn('required', controls['company_url'])
+                    self.assertEqual(controls['company_url']['maxlength'], '512')
                 self.assertEqual(controls['consent']['type'], 'checkbox')
                 self.assertIn('required', controls['consent'])
                 self.assertNotIn('checked', controls['consent'])
@@ -139,6 +145,16 @@ class SitesTest(unittest.TestCase):
                     if attrs.get('type') != 'hidden':
                         self.assertIn(attrs.get('id'), labels, name)
                 self.assertTrue(any(tag == 'details' and a.get('id') == 'privacy' for tag, a in page.elements))
+
+    def test_cloud_request_to_join_copy(self):
+        for lang, form in (('ru', 'register/index.html'), ('en', 'en/register/index.html')):
+            for filename in (form, f'registration-receipt/cloud/{lang}/index.html'):
+                page = Page((self.out / filename).read_text())
+                copy = ' '.join(page.text) + ' '.join(a.get('content', '') for tag, a in page.elements if tag == 'meta')
+                self.assertIn('Заявка на подключение' if lang == 'ru' else 'Request to join Raskur Cloud', copy)
+                self.assertNotIn('не создаёт аккаунт', copy)
+                self.assertNotIn('does not create a sign-in account', copy)
+                self.assertFalse(any('scope' in a.get('class', '').split() for _, a in page.elements))
 
     def test_receipt_templates(self):
         for filename in RECEIPTS:

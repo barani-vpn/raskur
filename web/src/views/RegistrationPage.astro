@@ -18,7 +18,7 @@ const groups = [{ title: c.contact, fields: contactFields }, { title: t.group, f
       <p class="eyebrow">{t.eyebrow}</p>
       <h1>{t.title}</h1>
       <p class="intro">{t.description}</p>
-      <p class="scope">{t.note}</p>
+      {t.note && <p class="scope">{t.note}</p>}
     </aside>
     <div class="form-card">
       <p class="form-note">{c.required}</p>
@@ -37,7 +37,7 @@ const groups = [{ title: c.contact, fields: contactFields }, { title: t.group, f
                   <option value="" disabled selected>{c.choose}</option>
                   {f.options.map(([value, ru, en]) => <option {value}>{lang === 'ru' ? ru : en}</option>)}
                 </select>
-              : <input id={f.name} name={f.name} type={f.type || 'text'} required={!f.optional} minlength="1" maxlength={f.maxLength} autocomplete={f.autocomplete} autocapitalize={f.type === 'email' ? 'none' : undefined} />}
+              : <input id={f.name} name={f.name} type={f.type || 'text'} required={!f.optional} minlength="1" maxlength={f.maxLength} autocomplete={f.autocomplete} autocapitalize={f.type === 'email' || f.type === 'url' ? 'none' : undefined} placeholder={f.type === 'url' ? 'https://example.com' : undefined} />}
           </div>)}</div>
         </fieldset>)}
         <div class="field message">
@@ -53,7 +53,7 @@ const groups = [{ title: c.contact, fields: contactFields }, { title: t.group, f
           <input id="consent" name="consent" type="checkbox" value="yes" required>
           <label for="consent">{c.consent}</label>
         </div>
-        <button class="btn" type="submit">{c.submit} <span aria-hidden="true">→</span></button>
+        <button class="btn" type="submit">{t.submit} <span aria-hidden="true">→</span></button>
       </form>
     </div>
   </div>
