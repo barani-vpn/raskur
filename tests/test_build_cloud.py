@@ -145,6 +145,12 @@ class SitesTest(unittest.TestCase):
                     if attrs.get('type') != 'hidden':
                         self.assertIn(attrs.get('id'), labels, name)
                 self.assertTrue(any(tag == 'details' and a.get('id') == 'privacy' for tag, a in page.elements))
+                notice = re.search(r'<details id="privacy"[^>]*>(.*?)</details>', (self.out / filename).read_text(), re.S)
+                assert notice is not None, 'privacy notice missing'
+                privacy_text = ' '.join(Page(notice.group(1)).text)
+                self.assertIn('GDPR', privacy_text)
+                self.assertIn('ЕС' if lang == 'ru' else 'EU', privacy_text)
+                self.assertNotRegex(privacy_text, r'(?i)Cloudflare|Poland|Польш|server|сервер')
 
     def test_cloud_request_to_join_copy(self):
         for lang, form in (('ru', 'register/index.html'), ('en', 'en/register/index.html')):
